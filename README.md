@@ -10,7 +10,7 @@ PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run
 python3 -m unittest discover -s tests
 ```
 
-The probe caps requested allocation at 512 MiB and reports observed peak RSS.
-Peak RSS is a process high-water mark, not current live memory, and operating
-systems may account for resident pages differently.
-
+The probe caps requested allocation at 512 MiB and reports per-step elapsed time
+(including any requested pause), cumulative elapsed time, and observed peak
+RSS. Peak RSS is a process high-water mark, not current live memory, and
+operating systems may account for resident pages differently.

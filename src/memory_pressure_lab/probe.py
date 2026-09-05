@@ -10,6 +10,8 @@ MAX_TOTAL_MIB = 512
 
 @dataclass(frozen=True)
 class Observation:
+    step_bytes: int
+    step_elapsed_ns: int
     allocated_bytes: int
     elapsed_ns: int
     peak_rss_bytes: int
@@ -47,14 +49,24 @@ def run_probe(
     observations: list[Observation] = []
     allocated = 0
     started = clock()
+    previous = started
     for size in allocation_plan(total_mib, step_mib):
         retained.append(bytearray(size))
         allocated += size
         if pause_seconds:
             sleep(pause_seconds)
         rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        observed_at = clock()
+        if observed_at < previous:
+            raise ValueError("clock must be monotonic")
         observations.append(
-            Observation(allocated, clock() - started, peak_rss_bytes(rss))
+            Observation(
+                size,
+                observed_at - previous,
+                allocated,
+                observed_at - started,
+                peak_rss_bytes(rss),
+            )
         )
+        previous = observed_at
     return observations
-
