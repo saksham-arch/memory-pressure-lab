@@ -15,6 +15,7 @@ class Observation:
     allocated_bytes: int
     elapsed_ns: int
     peak_rss_bytes: int
+    peak_rss_delta_bytes: int
 
 
 def allocation_plan(total_mib: int, step_mib: int) -> list[int]:
@@ -36,18 +37,25 @@ def peak_rss_bytes(raw_value: int, system: str = platform.system()) -> int:
     return raw_value * 1024 if system == "Linux" else raw_value
 
 
+def read_peak_rss_bytes() -> int:
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    return peak_rss_bytes(usage.ru_maxrss)
+
+
 def run_probe(
     total_mib: int,
     step_mib: int,
     *,
     pause_seconds: float = 0,
     clock: Callable[[], int] = perf_counter_ns,
+    rss_reader: Callable[[], int] = read_peak_rss_bytes,
 ) -> list[Observation]:
     if pause_seconds < 0:
         raise ValueError("pause_seconds must be non-negative")
     retained: list[bytearray] = []
     observations: list[Observation] = []
     allocated = 0
+    baseline_peak_rss = rss_reader()
     started = clock()
     previous = started
     for size in allocation_plan(total_mib, step_mib):
@@ -55,7 +63,7 @@ def run_probe(
         allocated += size
         if pause_seconds:
             sleep(pause_seconds)
-        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        peak_rss = rss_reader()
         observed_at = clock()
         if observed_at < previous:
             raise ValueError("clock must be monotonic")
@@ -65,7 +73,8 @@ def run_probe(
                 observed_at - previous,
                 allocated,
                 observed_at - started,
-                peak_rss_bytes(rss),
+                peak_rss,
+                max(0, peak_rss - baseline_peak_rss),
             )
         )
         previous = observed_at

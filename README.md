@@ -14,3 +14,8 @@ The probe caps requested allocation at 512 MiB and reports per-step elapsed time
 (including any requested pause), cumulative elapsed time, and observed peak
 RSS. Peak RSS is a process high-water mark, not current live memory, and
 operating systems may account for resident pages differently.
+
+Each observation also reports peak-RSS growth relative to the process baseline
+captured immediately before the probe. Since peak RSS is monotonic on supported
+platforms, that delta describes high-water growth rather than retained live
+memory.
