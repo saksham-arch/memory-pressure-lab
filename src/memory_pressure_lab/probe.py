@@ -14,7 +14,9 @@ class Observation:
     step_elapsed_ns: int
     allocated_bytes: int
     elapsed_ns: int
+    baseline_peak_rss_bytes: int
     peak_rss_bytes: int
+    peak_rss_step_delta_bytes: int
     peak_rss_delta_bytes: int
 
 
@@ -56,6 +58,7 @@ def run_probe(
     observations: list[Observation] = []
     allocated = 0
     baseline_peak_rss = rss_reader()
+    previous_peak_rss = baseline_peak_rss
     started = clock()
     previous = started
     for size in allocation_plan(total_mib, step_mib):
@@ -73,9 +76,12 @@ def run_probe(
                 observed_at - previous,
                 allocated,
                 observed_at - started,
+                baseline_peak_rss,
                 peak_rss,
+                max(0, peak_rss - previous_peak_rss),
                 max(0, peak_rss - baseline_peak_rss),
             )
         )
         previous = observed_at
+        previous_peak_rss = max(previous_peak_rss, peak_rss)
     return observations

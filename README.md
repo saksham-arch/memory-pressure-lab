@@ -18,4 +18,7 @@ operating systems may account for resident pages differently.
 Each observation also reports peak-RSS growth relative to the process baseline
 captured immediately before the probe. Since peak RSS is monotonic on supported
 platforms, that delta describes high-water growth rather than retained live
-memory.
+memory. The baseline value is retained in every observation, and per-step
+growth reports only a new increase beyond the greatest peak seen by earlier
+steps. A zero step delta means the recorded high-water mark did not advance; it
+does not prove that the allocation had no memory cost.

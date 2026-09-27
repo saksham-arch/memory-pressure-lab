@@ -29,6 +29,8 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual([item.step_elapsed_ns for item in results], [10, 10])
         self.assertEqual([item.allocated_bytes for item in results], [MIB, 2 * MIB])
         self.assertEqual([item.elapsed_ns for item in results], [10, 20])
+        self.assertEqual([item.baseline_peak_rss_bytes for item in results], [100, 100])
+        self.assertEqual([item.peak_rss_step_delta_bytes for item in results], [20, 30])
         self.assertEqual([item.peak_rss_delta_bytes for item in results], [20, 50])
 
     def test_rejects_non_monotonic_clock(self) -> None:
@@ -44,7 +46,22 @@ class ProbeTests(unittest.TestCase):
             clock=iter([0, 1]).__next__,
             rss_reader=lambda: next(rss_values),
         )
+        self.assertEqual(result[0].baseline_peak_rss_bytes, 100)
+        self.assertEqual(result[0].peak_rss_step_delta_bytes, 0)
         self.assertEqual(result[0].peak_rss_delta_bytes, 0)
+
+    def test_step_delta_does_not_recount_after_peak_reader_decreases(self) -> None:
+        rss_values = iter([100, 150, 140, 180])
+        results = run_probe(
+            3,
+            1,
+            clock=iter([0, 1, 2, 3]).__next__,
+            rss_reader=lambda: next(rss_values),
+        )
+        self.assertEqual(
+            [item.peak_rss_step_delta_bytes for item in results],
+            [50, 0, 30],
+        )
 
 
 if __name__ == "__main__":
