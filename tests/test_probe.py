@@ -1,6 +1,13 @@
 import unittest
 
-from memory_pressure_lab.probe import MIB, allocation_plan, peak_rss_bytes, run_probe
+from memory_pressure_lab.probe import (
+    MIB,
+    Observation,
+    allocation_plan,
+    peak_rss_bytes,
+    run_probe,
+    summarize_observations,
+)
 
 
 class ProbeTests(unittest.TestCase):
@@ -62,6 +69,40 @@ class ProbeTests(unittest.TestCase):
             [item.peak_rss_step_delta_bytes for item in results],
             [50, 0, 30],
         )
+
+    def test_summarizes_probe_high_water_observations(self) -> None:
+        observations = [
+            Observation(MIB, 10, MIB, 10, 100, 120, 20, 20),
+            Observation(MIB, 15, 2 * MIB, 25, 100, 150, 30, 50),
+        ]
+
+        summary = summarize_observations(observations)
+
+        self.assertEqual(summary.step_count, 2)
+        self.assertEqual(summary.allocated_bytes, 2 * MIB)
+        self.assertEqual(summary.elapsed_ns, 25)
+        self.assertEqual(summary.baseline_peak_rss_bytes, 100)
+        self.assertEqual(summary.maximum_peak_rss_bytes, 150)
+        self.assertEqual(summary.peak_rss_delta_bytes, 50)
+        self.assertEqual(summary.largest_step_peak_rss_delta_bytes, 30)
+
+    def test_rejects_empty_or_mixed_baseline_summary(self) -> None:
+        with self.assertRaises(ValueError):
+            summarize_observations([])
+        with self.assertRaises(ValueError):
+            summarize_observations(
+                [
+                    Observation(MIB, 1, MIB, 1, 100, 110, 10, 10),
+                    Observation(MIB, 1, 2 * MIB, 2, 200, 220, 10, 20),
+                ]
+            )
+        with self.assertRaises(ValueError):
+            summarize_observations(
+                [
+                    Observation(MIB, 1, 2 * MIB, 2, 100, 120, 20, 20),
+                    Observation(MIB, 1, MIB, 1, 100, 120, 0, 20),
+                ]
+            )
 
 
 if __name__ == "__main__":

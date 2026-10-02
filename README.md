@@ -7,6 +7,7 @@ only when `--run` is supplied.
 ```bash
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run
+PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run --summary
 python3 -m unittest discover -s tests
 ```
 
@@ -22,3 +23,8 @@ memory. The baseline value is retained in every observation, and per-step
 growth reports only a new increase beyond the greatest peak seen by earlier
 steps. A zero step delta means the recorded high-water mark did not advance; it
 does not prove that the allocation had no memory cost.
+
+`--summary` retains every observation and adds step count, requested allocation,
+elapsed time, the largest per-step peak increase, and total peak-RSS growth from
+the shared baseline. These remain high-water-mark observations; the summary
+does not estimate current live memory or prove that memory is retained.

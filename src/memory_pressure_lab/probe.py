@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import platform
 import resource
 from time import perf_counter_ns, sleep
-from typing import Callable
+from typing import Callable, Iterable
 
 MIB = 1024 * 1024
 MAX_TOTAL_MIB = 512
@@ -18,6 +18,17 @@ class Observation:
     peak_rss_bytes: int
     peak_rss_step_delta_bytes: int
     peak_rss_delta_bytes: int
+
+
+@dataclass(frozen=True)
+class ProbeSummary:
+    step_count: int
+    allocated_bytes: int
+    elapsed_ns: int
+    baseline_peak_rss_bytes: int
+    maximum_peak_rss_bytes: int
+    peak_rss_delta_bytes: int
+    largest_step_peak_rss_delta_bytes: int
 
 
 def allocation_plan(total_mib: int, step_mib: int) -> list[int]:
@@ -85,3 +96,29 @@ def run_probe(
         previous = observed_at
         previous_peak_rss = max(previous_peak_rss, peak_rss)
     return observations
+
+
+def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
+    items = list(observations)
+    if not items:
+        raise ValueError("at least one observation is required")
+    baseline = items[0].baseline_peak_rss_bytes
+    if any(item.baseline_peak_rss_bytes != baseline for item in items):
+        raise ValueError("observations must share one baseline")
+    if any(
+        current.allocated_bytes < previous.allocated_bytes
+        or current.elapsed_ns < previous.elapsed_ns
+        for previous, current in zip(items, items[1:])
+    ):
+        raise ValueError("observations must be in cumulative order")
+    return ProbeSummary(
+        step_count=len(items),
+        allocated_bytes=items[-1].allocated_bytes,
+        elapsed_ns=items[-1].elapsed_ns,
+        baseline_peak_rss_bytes=baseline,
+        maximum_peak_rss_bytes=max(item.peak_rss_bytes for item in items),
+        peak_rss_delta_bytes=max(item.peak_rss_delta_bytes for item in items),
+        largest_step_peak_rss_delta_bytes=max(
+            item.peak_rss_step_delta_bytes for item in items
+        ),
+    )
