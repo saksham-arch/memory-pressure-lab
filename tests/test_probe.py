@@ -84,7 +84,15 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(summary.baseline_peak_rss_bytes, 100)
         self.assertEqual(summary.maximum_peak_rss_bytes, 150)
         self.assertEqual(summary.peak_rss_delta_bytes, 50)
+        self.assertEqual(summary.peak_rss_growth_ratio, 50 / (2 * MIB))
         self.assertEqual(summary.largest_step_peak_rss_delta_bytes, 30)
+
+    def test_summary_ratio_uses_requested_allocation(self) -> None:
+        summary = summarize_observations(
+            [Observation(100, 1, 100, 1, 1_000, 1_050, 50, 50)]
+        )
+
+        self.assertEqual(summary.peak_rss_growth_ratio, 0.5)
 
     def test_rejects_empty_or_mixed_baseline_summary(self) -> None:
         with self.assertRaises(ValueError):
@@ -102,6 +110,10 @@ class ProbeTests(unittest.TestCase):
                     Observation(MIB, 1, 2 * MIB, 2, 100, 120, 20, 20),
                     Observation(MIB, 1, MIB, 1, 100, 120, 0, 20),
                 ]
+            )
+        with self.assertRaises(ValueError):
+            summarize_observations(
+                [Observation(MIB, 1, 0, 1, 100, 120, 20, 20)]
             )
 
 

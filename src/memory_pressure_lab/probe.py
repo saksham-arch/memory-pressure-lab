@@ -28,6 +28,7 @@ class ProbeSummary:
     baseline_peak_rss_bytes: int
     maximum_peak_rss_bytes: int
     peak_rss_delta_bytes: int
+    peak_rss_growth_ratio: float
     largest_step_peak_rss_delta_bytes: int
 
 
@@ -105,6 +106,8 @@ def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
     baseline = items[0].baseline_peak_rss_bytes
     if any(item.baseline_peak_rss_bytes != baseline for item in items):
         raise ValueError("observations must share one baseline")
+    if any(item.allocated_bytes <= 0 for item in items):
+        raise ValueError("observations must report positive cumulative allocation")
     if any(
         current.allocated_bytes < previous.allocated_bytes
         or current.elapsed_ns < previous.elapsed_ns
@@ -118,6 +121,10 @@ def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
         baseline_peak_rss_bytes=baseline,
         maximum_peak_rss_bytes=max(item.peak_rss_bytes for item in items),
         peak_rss_delta_bytes=max(item.peak_rss_delta_bytes for item in items),
+        peak_rss_growth_ratio=(
+            max(item.peak_rss_delta_bytes for item in items)
+            / items[-1].allocated_bytes
+        ),
         largest_step_peak_rss_delta_bytes=max(
             item.peak_rss_step_delta_bytes for item in items
         ),
