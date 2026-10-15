@@ -86,6 +86,20 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(summary.peak_rss_delta_bytes, 50)
         self.assertEqual(summary.peak_rss_growth_ratio, 50 / (2 * MIB))
         self.assertEqual(summary.largest_step_peak_rss_delta_bytes, 30)
+        self.assertEqual(summary.median_step_elapsed_ns, 12.5)
+        self.assertEqual(summary.maximum_step_elapsed_ns, 15)
+
+    def test_summary_step_timing_retains_an_outlier(self) -> None:
+        observations = [
+            Observation(MIB, 10, MIB, 10, 100, 120, 20, 20),
+            Observation(MIB, 100, 2 * MIB, 110, 100, 150, 30, 50),
+            Observation(MIB, 20, 3 * MIB, 130, 100, 160, 10, 60),
+        ]
+
+        summary = summarize_observations(observations)
+
+        self.assertEqual(summary.median_step_elapsed_ns, 20)
+        self.assertEqual(summary.maximum_step_elapsed_ns, 100)
 
     def test_summary_ratio_uses_requested_allocation(self) -> None:
         summary = summarize_observations(

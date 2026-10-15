@@ -25,11 +25,13 @@ steps. A zero step delta means the recorded high-water mark did not advance; it
 does not prove that the allocation had no memory cost.
 
 `--summary` retains every observation and adds step count, requested allocation,
-elapsed time, the largest per-step peak increase, and total peak-RSS growth from
-the shared baseline. It also reports `peak_rss_growth_ratio`, which divides that
-growth by requested allocation. The ratio can be below or above 1 because of
-allocator behavior, page accounting, unrelated process activity, and an
-already-elevated high-water mark. It is an observation for comparing controlled
-runs, not an allocation-efficiency score. These remain high-water-mark
-observations; the summary does not estimate current live memory or prove that
-memory is retained.
+elapsed time, median and maximum step elapsed time, the largest per-step peak
+increase, and total peak-RSS growth from the shared baseline. Step timing covers
+the entire probe step, including any requested pause, RSS sampling, and clock
+overhead; it is useful for spotting outlier steps but is not allocator-only
+latency. The summary also reports `peak_rss_growth_ratio`, which divides growth
+by requested allocation. The ratio can be below or above 1 because of allocator
+behavior, page accounting, unrelated process activity, and an already-elevated
+high-water mark. It is an observation for comparing controlled runs, not an
+allocation-efficiency score. These remain high-water-mark observations; the
+summary does not estimate current live memory or prove that memory is retained.
