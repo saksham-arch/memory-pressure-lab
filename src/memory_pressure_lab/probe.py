@@ -31,6 +31,8 @@ class ProbeSummary:
     peak_rss_delta_bytes: int
     peak_rss_growth_ratio: float
     largest_step_peak_rss_delta_bytes: int
+    median_step_peak_rss_delta_bytes: float
+    steps_with_peak_rss_growth: int
     median_step_elapsed_ns: float
     maximum_step_elapsed_ns: int
 
@@ -130,6 +132,12 @@ def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
         ),
         largest_step_peak_rss_delta_bytes=max(
             item.peak_rss_step_delta_bytes for item in items
+        ),
+        median_step_peak_rss_delta_bytes=median(
+            item.peak_rss_step_delta_bytes for item in items
+        ),
+        steps_with_peak_rss_growth=sum(
+            item.peak_rss_step_delta_bytes > 0 for item in items
         ),
         median_step_elapsed_ns=median(item.step_elapsed_ns for item in items),
         maximum_step_elapsed_ns=max(item.step_elapsed_ns for item in items),

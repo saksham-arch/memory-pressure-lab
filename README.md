@@ -8,7 +8,7 @@ only when `--run` is supplied.
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run --summary
-python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
 The probe caps requested allocation at 512 MiB and reports per-step elapsed time
@@ -35,3 +35,8 @@ behavior, page accounting, unrelated process activity, and an already-elevated
 high-water mark. It is an observation for comparing controlled runs, not an
 allocation-efficiency score. These remain high-water-mark observations; the
 summary does not estimate current live memory or prove that memory is retained.
+The summary also reports the median per-step peak-RSS increase and the number
+of steps that advanced the recorded peak. Together with the largest increase,
+these distinguish a typical step from a single jump or a plateau. A plateau can
+reflect page reuse or high-water-mark behavior and is not proof that a step had
+no memory cost.

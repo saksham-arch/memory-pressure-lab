@@ -86,6 +86,8 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(summary.peak_rss_delta_bytes, 50)
         self.assertEqual(summary.peak_rss_growth_ratio, 50 / (2 * MIB))
         self.assertEqual(summary.largest_step_peak_rss_delta_bytes, 30)
+        self.assertEqual(summary.median_step_peak_rss_delta_bytes, 25)
+        self.assertEqual(summary.steps_with_peak_rss_growth, 2)
         self.assertEqual(summary.median_step_elapsed_ns, 12.5)
         self.assertEqual(summary.maximum_step_elapsed_ns, 15)
 
@@ -100,6 +102,18 @@ class ProbeTests(unittest.TestCase):
 
         self.assertEqual(summary.median_step_elapsed_ns, 20)
         self.assertEqual(summary.maximum_step_elapsed_ns, 100)
+
+    def test_summary_counts_steps_that_advance_peak_rss(self) -> None:
+        observations = [
+            Observation(MIB, 10, MIB, 10, 100, 120, 20, 20),
+            Observation(MIB, 10, 2 * MIB, 20, 100, 115, 0, 20),
+            Observation(MIB, 10, 3 * MIB, 30, 100, 150, 30, 50),
+        ]
+
+        summary = summarize_observations(observations)
+
+        self.assertEqual(summary.median_step_peak_rss_delta_bytes, 20)
+        self.assertEqual(summary.steps_with_peak_rss_growth, 2)
 
     def test_summary_ratio_uses_requested_allocation(self) -> None:
         summary = summarize_observations(
