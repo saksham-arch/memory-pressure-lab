@@ -3,7 +3,7 @@ import platform
 import resource
 from statistics import median
 from time import perf_counter_ns, sleep
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 MIB = 1024 * 1024
 MAX_TOTAL_MIB = 512
@@ -32,6 +32,7 @@ class ProbeSummary:
     peak_rss_growth_ratio: float
     largest_step_peak_rss_delta_bytes: int
     median_step_peak_rss_delta_bytes: float
+    median_advancing_step_peak_rss_delta_bytes: Optional[float]
     steps_with_peak_rss_growth: int
     median_step_elapsed_ns: float
     maximum_step_elapsed_ns: int
@@ -119,6 +120,11 @@ def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
         for previous, current in zip(items, items[1:])
     ):
         raise ValueError("observations must be in cumulative order")
+    advancing_step_deltas = [
+        item.peak_rss_step_delta_bytes
+        for item in items
+        if item.peak_rss_step_delta_bytes > 0
+    ]
     return ProbeSummary(
         step_count=len(items),
         allocated_bytes=items[-1].allocated_bytes,
@@ -136,9 +142,10 @@ def summarize_observations(observations: Iterable[Observation]) -> ProbeSummary:
         median_step_peak_rss_delta_bytes=median(
             item.peak_rss_step_delta_bytes for item in items
         ),
-        steps_with_peak_rss_growth=sum(
-            item.peak_rss_step_delta_bytes > 0 for item in items
+        median_advancing_step_peak_rss_delta_bytes=(
+            median(advancing_step_deltas) if advancing_step_deltas else None
         ),
+        steps_with_peak_rss_growth=len(advancing_step_deltas),
         median_step_elapsed_ns=median(item.step_elapsed_ns for item in items),
         maximum_step_elapsed_ns=max(item.step_elapsed_ns for item in items),
     )

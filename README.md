@@ -35,8 +35,11 @@ behavior, page accounting, unrelated process activity, and an already-elevated
 high-water mark. It is an observation for comparing controlled runs, not an
 allocation-efficiency score. These remain high-water-mark observations; the
 summary does not estimate current live memory or prove that memory is retained.
-The summary also reports the median per-step peak-RSS increase and the number
-of steps that advanced the recorded peak. Together with the largest increase,
-these distinguish a typical step from a single jump or a plateau. A plateau can
-reflect page reuse or high-water-mark behavior and is not proof that a step had
-no memory cost.
+The summary also reports the median per-step peak-RSS increase, the median among
+only steps that advanced the peak, and the number of advancing steps. The
+advancing-only median is `null` when no step records growth. Together with the
+largest increase, these distinguish typical positive jumps from plateaus. The
+advancing-only statistic deliberately excludes zero-delta steps, so it must be
+read alongside the advancing-step count; it is not representative of every
+allocation step. A plateau can reflect page reuse or high-water-mark behavior
+and is not proof that a step had no memory cost.
