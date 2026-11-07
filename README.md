@@ -4,6 +4,9 @@ A bounded, explicit memory-pressure probe for observing how a process behaves
 as resident memory grows. The default command is a dry run; allocation starts
 only when `--run` is supplied.
 
+Pause durations must be finite and non-negative; invalid values are rejected
+before the probe allocates memory.
+
 ```bash
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8
 PYTHONPATH=src python3 -m memory_pressure_lab --total-mib 64 --step-mib 8 --run

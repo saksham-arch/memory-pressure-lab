@@ -45,6 +45,11 @@ class ProbeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_probe(1, 1, clock=lambda: next(ticks), rss_reader=lambda: 100)
 
+    def test_rejects_non_finite_pause_before_allocation(self) -> None:
+        for pause in (-1, float("nan"), float("inf")):
+            with self.subTest(pause=pause), self.assertRaises(ValueError):
+                run_probe(1, 1, pause_seconds=pause)
+
     def test_peak_rss_delta_never_goes_negative(self) -> None:
         rss_values = iter([100, 90])
         result = run_probe(

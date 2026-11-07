@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from math import isfinite
 import platform
 import resource
 from statistics import median
@@ -70,8 +71,8 @@ def run_probe(
     clock: Callable[[], int] = perf_counter_ns,
     rss_reader: Callable[[], int] = read_peak_rss_bytes,
 ) -> list[Observation]:
-    if pause_seconds < 0:
-        raise ValueError("pause_seconds must be non-negative")
+    if not isfinite(pause_seconds) or pause_seconds < 0:
+        raise ValueError("pause_seconds must be finite and non-negative")
     retained: list[bytearray] = []
     observations: list[Observation] = []
     allocated = 0
